@@ -45,7 +45,6 @@ class Train:
         self.norm = args.norm
 
         self.dir_checkpoint = args.dir_checkpoint
-        self.dir_log = args.dir_log
 
         self.dir_loss=args.dir_loss
         self.dir_data = args.dir_data
@@ -56,13 +55,11 @@ class Train:
         self.train_data_reverse = args.train_data_reverse
         self.train_target = args.train_target
         self.train_mask=args.train_mask
-        self.train_label = args.train_label
         self.train_replace_mask = args.train_replace_mask
         self.train_changetable = args.train_changetable
         self.train_changetable_reverse=args.train_changetable_reverse
         self.val_data=args.val_data
         self.val_mask=args.val_mask
-        self.val_label = args.val_label
 
 
         self.lr_G = args.lr_G

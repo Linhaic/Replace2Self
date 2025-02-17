@@ -22,10 +22,10 @@ parser.add_argument('--train_continue', default='off', choices=['on', 'off'], de
 parser.add_argument('--scope', default='resnet', dest='scope')
 parser.add_argument('--norm', type=str, default='bnorm', dest='norm')
 
-parser.add_argument('--dir_checkpoint', default='checkpoints/simulation/', dest='dir_checkpoint')
+parser.add_argument('--dir_checkpoint', default='checkpoints/hcp/', dest='dir_checkpoint')
 
-parser.add_argument('--dir_data', default='data/simulation/train_test', dest='dir_data')
-parser.add_argument('--dir_result', default='results/simulation/train_test/val/images', dest='dir_result')
+parser.add_argument('--dir_data', default='data/hcp/train_test', dest='dir_data')
+parser.add_argument('--dir_result', default='results/hcp/train_test/val/images', dest='dir_result')
 parser.add_argument('--train_data', default='train/train_replace.npy', dest='train_data')
 parser.add_argument('--train_data_reverse', default='train/train_replace_reverse.npy', dest='train_data_reverse')
 parser.add_argument('--train_target', default='train/train_data.npy', dest='train_target')
@@ -36,7 +36,7 @@ parser.add_argument('--train_changetable_reverse', default='train/train_changeta
 parser.add_argument('--val_data', default='val/val_data.npy', dest='val_data')
 parser.add_argument('--val_mask', default='val/val_mask.npy', dest='val_mask')
 
-parser.add_argument('--dir_loss', default='results/simulation/train_test', dest='dir_loss')
+parser.add_argument('--dir_loss', default='results/hcp/train_test', dest='dir_loss')
 
 parser.add_argument('--num_epoch', type=int,  default=200, dest='num_epoch')
 parser.add_argument('--batch_size', type=int, default=16, dest='batch_size')

@@ -8,7 +8,8 @@ from net import ResNet
 data_file='data/hcp/data.nii'
 bval_file='data/hcp/bvals'
 bvec_file='data/hcp/bvecs'
-checkpoint_dir = 'checkpoints/hcp/model200.pth'
+checkpoint_dir = 'checkpoints/hcp/model1.pth'
+bval_set = 1000
 
 def get_neighbor(bvals,bvecs,f,cosine_radio):
     bval = bvals[f]
@@ -44,31 +45,24 @@ model.load_state_dict(state_dict['model'])
 device='cuda:0'
 model.to(device)
 
-#筛出b0,b1000,b2000
-b0 = np.where(bvals < 100)[0]
-b1=np.where((bvals>500) & (bvals<1500))[0]
+#
+b_index=np.where((bvals>(bval_set - 60)) & (bvals<(bval_set + 60)))[0]
+bval_select=bvals[b_index]
+bvec_select=bvecs[b_index,...]
+data_select=data[...,b_index]
 
-bval_0=bvals[b0]
-bval_1=bvals[b1]
-
-bvec_0=bvecs[b0,...]
-bvec_1=bvecs[b1,...]
-
-data_0=data[...,b0]
-data_1=data[...,b1]
-
-b1_flag=0
+b_flag=0
 
 denoise_data=np.zeros_like(data)
 for i in range(data.shape[-1]):
     bval=bvals[i]
-    if bval<500:
+    if bval < (bval_set - 60) or bval > (bval_set + 60):
         denoise_data[...,i]=data[...,i]
         continue
-    elif bval>500 and bval<1500:
-        neighbor=get_neighbor(bval_1,bvec_1,b1_flag,9)[0]
-        new_data=data_1[...,neighbor]
-        b1_flag = b1_flag + 1
+    elif bval > (bval_set - 60) and bval < (bval_set + 60):
+        neighbor=get_neighbor(bval_select, bvec_select, b_flag, 9)[0]
+        new_data=data_select[...,neighbor]
+        b_flag = b_flag + 1
     for j in range(new_data.shape[0]):
         data_slicer=new_data[j,:,:,:]
         data_slicer=data_slicer.transpose((2,0,1))

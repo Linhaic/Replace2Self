@@ -49,7 +49,7 @@ class ValDataset(torch.utils.data.Dataset):
        stuff<number>_density.pt
     """
 
-    def __init__(self, data_dir,mask_dir,label_dir,data_type='float32', transform=None):
+    def __init__(self, data_dir,mask_dir,data_type='float32', transform=None):
         self.transform = transform
         self.data_type = data_type
         self.data = np.load(data_dir)
