@@ -2,18 +2,12 @@ import numpy as np
 import nibabel as nib
 from utils import angular_neighbors
 from dipy.io.gradients import read_bvals_bvecs
-from  Replace_pixel import exchange_pixel
+from  replace_pixel import exchange_pixel2
 
-data_file='dti.nii.gz'
-bval_file='dti.bval'
-bvec_file='dti.bvec'
-mask_file='mask.nii.gz'
-
-#Parameter initialization
-num_dir = 10
-num_group = 10
-bval_set = 1000
-dataloader_dir = 'data/XHCUMS_0026001/train_test'
+data_file='data/hcp/100206/data.nii'
+bval_file='data/hcp/100206/bvals'
+bvec_file='data/hcp/100206/bvecs'
+mask_file='data/hcp/100206/nodif_brain_mask.nii.gz'
 
 def get_neighbor(bvals,bvecs,f,cosine_radio):
     bval = bvals[f]
@@ -53,39 +47,59 @@ def get_group(data,bvals,bvecs,num_dir,num_group):
         new_data[...,i]=data[...,neighbor]
     return new_data
 
+# 读取数据和b值文件
 bvals, bvecs = read_bvals_bvecs(bval_file, bvec_file)
 data_image = nib.load(data_file)
 data = np.asarray(data_image.get_fdata(caching='unchanged'), dtype='float32')
-mask_image = nib.load(mask_file)
+mask_image=nib.load(mask_file)
 mask = np.asarray(mask_image.get_fdata(caching='unchanged'), dtype='float32')
-data = np.squeeze(data)
+
+#初始化超参数
+num_dir=10
+num_group=12
 X,Y,Z,V=data.shape
 
-#筛出b0,b1000,b2000
-index_select = np.where((bvals>(bval_set - 50)) & (bvals<(bval_set + 50)))[0]
-data_select = data[..., index_select]
-bval_select = bvals[index_select]
-bvec_select = bvecs[index_select, ...]
+#筛出b0,b1000
+b0 = np.where(bvals < 100)[0]
+b1 = np.where((bvals>100) & (bvals<1500))[0]
+bval_1=bvals[b1]
+bvec_1=bvecs[b1,...]
+data_1=data[...,b1]
 
-group_data=get_group(data_select,bval_select,bvec_select,num_dir,num_group)
+#数据集划分为n个子集
+group_data_1=get_group(data_1,bval_1,bvec_1,num_dir,num_group)
 
-train_data=group_data[..., :-2]
-test_data=group_data[..., -2:]
+#划分训练集与测试集
+train_data=group_data_1[...,:-2]
+test_data=group_data_1[...,-2:]
 
-train_data=train_data.transpose((0,1,3,2,4))
-test_data=test_data.transpose((0,1,3,2,4))
-train_data=train_data.reshape((X,Y,num_dir,-1))
-test_data=test_data.reshape((X,Y,num_dir,-1))
+mask=np.expand_dims(mask,axis=-1)
+mask=np.repeat(mask,repeats=train_data.shape[-2],axis=-1)
+mask=np.expand_dims(mask,axis=-1)
+mask=np.repeat(mask,repeats=train_data.shape[-1],axis=-1)
+
+#hcp数据集维度交换与压缩
+train_data=train_data.transpose((0,2,3,1,4))
+test_data=test_data.transpose((0,2,3,1,4))
+mask=mask.transpose((0,2,3,1,4))
+train_data=train_data.reshape((X,Z,num_dir,-1))
+test_data=test_data.reshape((X,Z,num_dir,-1))
+mask=mask.reshape((X,Z,num_dir,-1))
 
 
 new_train_data=[]
 new_test_data=[]
+new_mask=[]
 
+#hcp数据集去除pixel全0的数据
 for i in range(train_data.shape[-1]):
     if np.max(train_data[...,i])!=np.min(train_data[...,i]):
         new_train_data.append(train_data[...,i])
+        new_mask.append(mask[...,i])
 train_data=np.array(new_train_data)
 train_data=train_data.transpose((1,2,3,0))
+mask=np.array(new_mask)
+mask=mask.transpose((1,2,3,0))
 
 for i in range(test_data.shape[-1]):
     if np.max(test_data[...,i])!=np.min(test_data[...,i]):
@@ -94,28 +108,27 @@ test_data=np.array(new_test_data)
 test_data=test_data.transpose((1,2,3,0))
 
 
+
 #replace_pixel元素替换
 train_replace=np.zeros_like(train_data)
 train_replace_reverse=np.zeros_like(train_data)
-train_replace_mask=np.zeros_like(train_data)
+train_mask=np.zeros_like(train_data)
 train_changetable=np.zeros_like(train_data)
 train_changetable_reverse=np.zeros_like(train_data)
 for i in range(train_data.shape[-1]):
-    new_data,new_data_reverse,mask_slicer,change_table,change_table_reverse = exchange_pixel(train_data[...,i],2)
+    new_data,new_data_reverse,mask,change_table,change_table_reverse=exchange_pixel2(train_data[...,i],2)
     train_replace[...,i]=new_data
     train_replace_reverse[...,i]=new_data_reverse
-    train_replace_mask[...,i]=mask_slicer
+    train_mask[...,i]=mask
     train_changetable[...,i]=change_table
     train_changetable_reverse[...,i]=change_table_reverse
     print('total epoch:'+str(train_data.shape[-1])+'; epoch '+str(i)+' is completed!')
 
-
-np.save(dataloader_dir + '/train/train_data', train_data)
-np.save(dataloader_dir + '/train/train_mask', train_mask)
-np.save(dataloader_dir + '/val/val_data', test_data)
-np.save(dataloader_dir + '/val/val_mask', test_mask)
-np.save(dataloader_dir + '/train/train_replace', train_replace)
-np.save(dataloader_dir + '/train/train_replace_reverse', train_replace_reverse)
-np.save(dataloader_dir + '/train/train_replace_mask', train_replace_mask)
-np.save(dataloader_dir + '/train/train_changetable', train_changetable)
-np.save(dataloader_dir + '/train/train_changetable_reverse', train_changetable_reverse)
+np.save('data/hcp/train_test/train_mask',mask)
+np.save('data/hcp/train_test/train_data',train_data)
+np.save('data/hcp/train_test/val_data',test_data)
+np.save('data/hcp/train_test/train_replace',train_replace)
+np.save('data/hcp/train_test/train_replace_reverse',train_replace_reverse)
+np.save('data/hcp/train_test/train_replace_mask',train_mask)
+np.save('data/hcp/train_test/train_changetable',train_changetable)
+np.save('data/hcp/train_test/train_changetable_reverse',train_changetable_reverse)
