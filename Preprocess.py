@@ -4,10 +4,10 @@ from utils import angular_neighbors
 from dipy.io.gradients import read_bvals_bvecs
 from  replace_pixel import exchange_pixel2
 
-data_file='data/hcp/100206/data.nii'
-bval_file='data/hcp/100206/bvals'
-bvec_file='data/hcp/100206/bvecs'
-mask_file='data/hcp/100206/nodif_brain_mask.nii.gz'
+data_file='data.nii'
+bval_file='bvals'
+bvec_file='bvecs'
+mask_file='nodif_brain_mask.nii.gz'
 
 def get_neighbor(bvals,bvecs,f,cosine_radio):
     bval = bvals[f]
@@ -107,8 +107,6 @@ for i in range(test_data.shape[-1]):
 test_data=np.array(new_test_data)
 test_data=test_data.transpose((1,2,3,0))
 
-
-
 #replace_pixel元素替换
 train_replace=np.zeros_like(train_data)
 train_replace_reverse=np.zeros_like(train_data)
@@ -124,11 +122,11 @@ for i in range(train_data.shape[-1]):
     train_changetable_reverse[...,i]=change_table_reverse
     print('total epoch:'+str(train_data.shape[-1])+'; epoch '+str(i)+' is completed!')
 
-np.save('data/hcp/train_test/train_mask',mask)
-np.save('data/hcp/train_test/train_data',train_data)
-np.save('data/hcp/train_test/val_data',test_data)
-np.save('data/hcp/train_test/train_replace',train_replace)
-np.save('data/hcp/train_test/train_replace_reverse',train_replace_reverse)
-np.save('data/hcp/train_test/train_replace_mask',train_mask)
-np.save('data/hcp/train_test/train_changetable',train_changetable)
-np.save('data/hcp/train_test/train_changetable_reverse',train_changetable_reverse)
+np.save('train_test/train_mask',mask)
+np.save('train_test/train_data',train_data)
+np.save('train_test/val_data',test_data)
+np.save('train_test/train_replace',train_replace)
+np.save('train_test/train_replace_reverse',train_replace_reverse)
+np.save('train_test/train_replace_mask',train_mask)
+np.save('train_test/train_changetable',train_changetable)
+np.save('train_test/train_changetable_reverse',train_changetable_reverse)
