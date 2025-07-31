@@ -4,9 +4,10 @@ from utils import angular_neighbors
 from dipy.io.gradients import read_bvals_bvecs
 from  Replace_pixel import exchange_pixel
 
-data_file='data/NKI_TRT_0021001/session_2/dti.nii.gz'
-bval_file='data/NKI_TRT_0021001/session_2/dti.bval'
-bvec_file='data/NKI_TRT_0021001/session_2/dti.bvec'
+data_file='dti.nii.gz'
+bval_file='dti.bval'
+bvec_file='dti.bvec'
+mask_file='mask.nii.gz'
 
 #Parameter initialization
 num_dir = 10
@@ -55,6 +56,8 @@ def get_group(data,bvals,bvecs,num_dir,num_group):
 bvals, bvecs = read_bvals_bvecs(bval_file, bvec_file)
 data_image = nib.load(data_file)
 data = np.asarray(data_image.get_fdata(caching='unchanged'), dtype='float32')
+mask_image = nib.load(mask_file)
+mask = np.asarray(mask_image.get_fdata(caching='unchanged'), dtype='float32')
 data = np.squeeze(data)
 X,Y,Z,V=data.shape
 
@@ -94,26 +97,25 @@ test_data=test_data.transpose((1,2,3,0))
 #replace_pixel元素替换
 train_replace=np.zeros_like(train_data)
 train_replace_reverse=np.zeros_like(train_data)
-train_mask=np.zeros_like(train_data)
+train_replace_mask=np.zeros_like(train_data)
 train_changetable=np.zeros_like(train_data)
 train_changetable_reverse=np.zeros_like(train_data)
 for i in range(train_data.shape[-1]):
-    new_data,new_data_reverse,mask,change_table,change_table_reverse = exchange_pixel(train_data[...,i],2)
+    new_data,new_data_reverse,mask_slicer,change_table,change_table_reverse = exchange_pixel(train_data[...,i],2)
     train_replace[...,i]=new_data
     train_replace_reverse[...,i]=new_data_reverse
-    train_mask[...,i]=mask
+    train_replace_mask[...,i]=mask_slicer
     train_changetable[...,i]=change_table
     train_changetable_reverse[...,i]=change_table_reverse
     print('total epoch:'+str(train_data.shape[-1])+'; epoch '+str(i)+' is completed!')
 
-train_mask = np.ones_like(train_data)
-test_mask = np.ones_like(test_data)
+
 np.save(dataloader_dir + '/train/train_data', train_data)
 np.save(dataloader_dir + '/train/train_mask', train_mask)
 np.save(dataloader_dir + '/val/val_data', test_data)
 np.save(dataloader_dir + '/val/val_mask', test_mask)
 np.save(dataloader_dir + '/train/train_replace', train_replace)
 np.save(dataloader_dir + '/train/train_replace_reverse', train_replace_reverse)
-np.save(dataloader_dir + '/train/train_replace_mask', train_mask)
+np.save(dataloader_dir + '/train/train_replace_mask', train_replace_mask)
 np.save(dataloader_dir + '/train/train_changetable', train_changetable)
 np.save(dataloader_dir + '/train/train_changetable_reverse', train_changetable_reverse)
